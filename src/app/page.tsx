@@ -1,101 +1,138 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import type { ColDef } from 'ag-grid-community';
+import {
+  UniversalGrid,
+  useCreateUniversalGridStore,
+  useGridStore,
+} from '@/components/universal-grid';
+
+// ── Demo 資料型別 ──────────────────────────────────────────────────
+
+interface ManualRow {
+  id: number;
+  name: string;
+  age: number;
+}
+
+interface ApiRow {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+}
+
+// ── Column 定義 ────────────────────────────────────────────────────
+
+const manualColumns: ColDef<ManualRow>[] = [
+  { field: 'id', headerName: 'ID', width: 80 },
+  { field: 'name', headerName: '名稱', flex: 1 },
+  { field: 'age', headerName: '年齡', width: 100 },
+];
+
+const apiColumns: ColDef<ApiRow>[] = [
+  { field: 'id', headerName: 'ID', width: 80 },
+  { field: 'name', headerName: '名稱', flex: 1 },
+  { field: 'username', headerName: '使用者名稱', flex: 1 },
+  { field: 'email', headerName: 'Email', flex: 1 },
+];
+
+// ── 手動模式 Demo ──────────────────────────────────────────────────
+
+let nextId = 1;
+
+function ManualDemo() {
+  const store = useCreateUniversalGridStore<ManualRow>({
+    mode: 'manual',
+    columnDefs: manualColumns,
+  });
+
+  const rowCount = useGridStore(store, (s) => s.rowData.length);
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: 8 }}>手動輸入模式（{rowCount} 筆）</h2>
+      <UniversalGrid
+        store={store}
+        createRow={() => ({
+          id: nextId++,
+          name: `User ${nextId}`,
+          age: Math.floor(Math.random() * 40) + 20,
+        })}
+        height={300}
+      />
+    </div>
+  );
+}
+
+// ── API 模式 Demo ──────────────────────────────────────────────────
+
+function ApiDemo() {
+  const store = useCreateUniversalGridStore<ApiRow>({
+    mode: 'api',
+    columnDefs: apiColumns,
+  });
+
+  const rowCount = useGridStore(store, (s) => s.rowData.length);
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: 8 }}>API 資料模式（{rowCount} 筆）</h2>
+      <UniversalGrid
+        store={store}
+        fetchUrl="https://jsonplaceholder.typicode.com/users"
+        height={300}
+      />
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [tab, setTab] = useState<'manual' | 'api'>('manual');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  return (
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: 32 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>
+        Universal Grid Demo
+      </h1>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <button
+          type="button"
+          onClick={() => setTab('manual')}
+          style={{
+            padding: '8px 20px',
+            borderRadius: 6,
+            border: '1px solid #d1d5db',
+            background: tab === 'manual' ? '#111' : '#fff',
+            color: tab === 'manual' ? '#fff' : '#111',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          手動輸入
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('api')}
+          style={{
+            padding: '8px 20px',
+            borderRadius: 6,
+            border: '1px solid #d1d5db',
+            background: tab === 'api' ? '#111' : '#fff',
+            color: tab === 'api' ? '#fff' : '#111',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          API 資料
+        </button>
+      </div>
+
+      {tab === 'manual' ? <ManualDemo /> : <ApiDemo />}
     </div>
   );
 }
