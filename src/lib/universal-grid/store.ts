@@ -33,6 +33,8 @@ export interface UniversalGridState<TData> {
   deleteSelectedRows: () => void;
   clearAllRows: () => void;
   setSelectedRows: (rows: TData[]) => void;
+  applySelectedRows: (rows: TData[]) => void;
+  clearSelection: () => void;
   fetchData: (url: string) => Promise<void>;
 }
 
@@ -45,6 +47,20 @@ export function createUniversalGridStore<TData>(
 ): UniversalGridStore<TData> {
   const { mode, columnDefs, initialRowData = [], fetchFn } = config;
 
+  const syncGridSelection = (
+    api: GridApi<TData> | null,
+    rows: TData[],
+  ): void => {
+    if (!api) {
+      return;
+    }
+
+    const selectedSet = new Set(rows);
+    api.forEachNode((node) => {
+      node.setSelected(selectedSet.has(node.data as TData));
+    });
+  };
+
   return createStore<UniversalGridState<TData>>((set, get) => ({
     mode,
     columnDefs,
@@ -54,9 +70,15 @@ export function createUniversalGridStore<TData>(
     error: null,
     gridApi: null,
 
-    setGridApi: (api) => set({ gridApi: api }),
+    setGridApi: (api) => {
+      syncGridSelection(api, get().selectedRows);
+      set({ gridApi: api });
+    },
 
-    setRowData: (data) => set({ rowData: data }),
+    setRowData: (data) => {
+      syncGridSelection(get().gridApi, []);
+      set({ rowData: data, selectedRows: [] });
+    },
 
     addRow: (row) => set((state) => ({ rowData: [...state.rowData, row] })),
 
@@ -69,9 +91,22 @@ export function createUniversalGridStore<TData>(
       });
     },
 
-    clearAllRows: () => set({ rowData: [], selectedRows: [] }),
+    clearAllRows: () => {
+      syncGridSelection(get().gridApi, []);
+      set({ rowData: [], selectedRows: [] });
+    },
 
     setSelectedRows: (rows) => set({ selectedRows: rows }),
+
+    applySelectedRows: (rows) => {
+      syncGridSelection(get().gridApi, rows);
+      set({ selectedRows: rows });
+    },
+
+    clearSelection: () => {
+      syncGridSelection(get().gridApi, []);
+      set({ selectedRows: [] });
+    },
 
     fetchData: async (url) => {
       set({ loading: true, error: null });
@@ -84,7 +119,8 @@ export function createUniversalGridStore<TData>(
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           data = await res.json();
         }
-        set({ rowData: data, loading: false });
+        syncGridSelection(get().gridApi, []);
+        set({ rowData: data, selectedRows: [], loading: false });
       } catch (err) {
         set({
           error: err instanceof Error ? err.message : String(err),

@@ -10,6 +10,7 @@ import {
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { useStore } from 'zustand';
+import { ApiSelectionModal } from './ApiSelectionModal';
 import type { UniversalGridStore } from '@/lib/universal-grid/store';
 
 // ── Props ──────────────────────────────────────────────────────────
@@ -161,6 +162,7 @@ export function UniversalGrid<TData>({
 
         {mode === 'api' && (
           <>
+            <ApiSelectionModal store={store} />
             <button type="button" onClick={handleRefetch} style={btnStyle}>
               重新載入
             </button>

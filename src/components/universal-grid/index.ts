@@ -1,4 +1,5 @@
 export { UniversalGrid } from './UniversalGrid';
+export { ApiSelectionModal } from './ApiSelectionModal';
 export {
   useCreateUniversalGridStore,
   useGridStore,
